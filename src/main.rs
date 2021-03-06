@@ -14,13 +14,13 @@ struct Item {
 
 #[derive(Clone)]
 struct Store {
-  grocery_list: Arc<RwLock<Items>>
+  list: Arc<RwLock<Items>>
 }
 
 impl Store {
     fn new() -> Self {
         Store {
-            grocery_list: Arc::new(RwLock::new(HashMap::new())),
+            list: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 }
@@ -30,8 +30,8 @@ fn json_body() -> impl Filter<Extract = (Item,), Error = warp::Rejection> + Clon
 }
 
 async fn add_list_item(item: Item, store: Store) -> Result<impl warp::Reply, warp::Rejection> {
-    store.grocery_list.write().insert(item.name, item.quantity);
-    println!("{:?}", store.grocery_list);
+    store.list.write().insert(item.name, item.quantity);
+    println!("{:?}", store.list);
     return Ok(warp::reply::with_status(
             "Added items to list",
             http::StatusCode::CREATED,
@@ -40,7 +40,7 @@ async fn add_list_item(item: Item, store: Store) -> Result<impl warp::Reply, war
 
 async fn get_list(store: Store) -> Result<impl warp::Reply, warp::Rejection> {
     let mut result = HashMap::new();
-    let r = store.grocery_list.read();
+    let r = store.list.read();
 
     for (key, value) in r.iter() {
         result.insert(key, value);
