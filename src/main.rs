@@ -4,6 +4,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use serde::{Serialize, Deserialize};
 
+mod database;
+
 type Items = HashMap<String, i32>;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -105,5 +107,6 @@ async fn main() {
 
     let routes = add_item.or(get_items).or(delete_item).or(update_item);
 
+    database::test_database();
     warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 }
