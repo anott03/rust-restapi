@@ -30,11 +30,11 @@ impl Store {
     }
 }
 
-fn json_body() -> impl Filter<Extract = (Item,), Error = warp::Rejection> + Clone {
+fn post_json() -> impl Filter<Extract = (Item,), Error = warp::Rejection> + Clone {
     warp::body::content_length_limit(1024 * 16).and(warp::body::json())
 }
 
-async fn add_list_item(item: Item, store: Store) -> Result<impl warp::Reply, warp::Rejection> {
+async fn update_list_item(item: Item, store: Store) -> Result<impl warp::Reply, warp::Rejection> {
     store.list.write().insert(item.name, item.quantity);
     println!("{:?}", store.list);
     return Ok(warp::reply::with_status(
@@ -76,9 +76,17 @@ async fn main() {
         .and(warp::path("v1"))
         .and(warp::path("groceries"))
         .and(warp::path::end())
-        .and(json_body())
+        .and(post_json())
         .and(store_filter.clone())
-        .and_then(add_list_item);
+        .and_then(update_list_item);
+
+    let update_item = warp::put()
+        .and(warp::path("v1"))
+        .and(warp::path("groceries"))
+        .and(warp::path::end())
+        .and(post_json())
+        .and(store_filter.clone())
+        .and_then(update_list_item);
 
     let get_items = warp::get()
         .and(warp::path("v1"))
@@ -95,7 +103,7 @@ async fn main() {
         .and(store_filter.clone())
         .and_then(delete_list_item);
 
-    let routes = add_item.or(get_items).or(delete_item);
+    let routes = add_item.or(get_items).or(delete_item).or(update_item);
 
     warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 }
