@@ -74,7 +74,7 @@ async fn main() {
 
     let add_item = warp::post()
         .and(warp::path("v1"))
-        .and(warp::path("groceries"))
+        .and(warp::path("items"))
         .and(warp::path::end())
         .and(post_json())
         .and(store_filter.clone())
@@ -82,7 +82,7 @@ async fn main() {
 
     let update_item = warp::put()
         .and(warp::path("v1"))
-        .and(warp::path("groceries"))
+        .and(warp::path("items"))
         .and(warp::path::end())
         .and(post_json())
         .and(store_filter.clone())
@@ -90,14 +90,14 @@ async fn main() {
 
     let get_items = warp::get()
         .and(warp::path("v1"))
-        .and(warp::path("groceries"))
+        .and(warp::path("items"))
         .and(warp::path::end())
         .and(store_filter.clone())
         .and_then(get_list);
 
     let delete_item = warp::delete()
         .and(warp::path("v1"))
-        .and(warp::path("groceries"))
+        .and(warp::path("items"))
         .and(warp::path::end())
         .and(delete_json())
         .and(store_filter.clone())
