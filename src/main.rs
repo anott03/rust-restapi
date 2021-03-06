@@ -7,6 +7,11 @@ use serde::{Serialize, Deserialize};
 type Items = HashMap<String, i32>;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+struct Id {
+    name: String
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 struct Item {
     name: String,
     quantity: i32
@@ -38,6 +43,19 @@ async fn add_list_item(item: Item, store: Store) -> Result<impl warp::Reply, war
     ));
 }
 
+async fn delete_list_item(id: Id, store: Store) -> Result<impl warp::Reply, warp::Rejection> {
+    store.list.write().remove(&id.name);
+    println!("{:?}", store.list);
+    return Ok(warp::reply::with_status(
+            "Removed item from list",
+            http::StatusCode::CREATED,
+    ));
+}
+
+fn delete_json() -> impl Filter<Extract = (Id,), Error = warp::Rejection> + Clone {
+    warp::body::content_length_limit(1024 * 16).and(warp::body::json())
+}
+
 async fn get_list(store: Store) -> Result<impl warp::Reply, warp::Rejection> {
     let mut result = HashMap::new();
     let r = store.list.read();
@@ -54,7 +72,7 @@ async fn main() {
     let store = Store::new();
     let store_filter = warp::any().map(move || store.clone());
 
-    let add_items = warp::post()
+    let add_item = warp::post()
         .and(warp::path("v1"))
         .and(warp::path("groceries"))
         .and(warp::path::end())
@@ -62,14 +80,22 @@ async fn main() {
         .and(store_filter.clone())
         .and_then(add_list_item);
 
-    let get_items = warp::post()
+    let get_items = warp::get()
         .and(warp::path("v1"))
         .and(warp::path("groceries"))
         .and(warp::path::end())
         .and(store_filter.clone())
         .and_then(get_list);
 
-    let routes = add_items.or(get_items);
+    let delete_item = warp::delete()
+        .and(warp::path("v1"))
+        .and(warp::path("groceries"))
+        .and(warp::path::end())
+        .and(delete_json())
+        .and(store_filter.clone())
+        .and_then(delete_list_item);
+
+    let routes = add_item.or(get_items).or(delete_item);
 
     warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 }
