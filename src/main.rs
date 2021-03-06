@@ -38,6 +38,17 @@ async fn add_list_item(item: Item, store: Store) -> Result<impl warp::Reply, war
     ));
 }
 
+async fn get_list(store: Store) -> Result<impl warp::Reply, warp::Rejection> {
+    let mut result = HashMap::new();
+    let r = store.grocery_list.read();
+
+    for (key, value) in r.iter() {
+        result.insert(key, value);
+    }
+
+    return Ok(warp::reply::json(&result));
+}
+
 #[tokio::main]
 async fn main() {
     let store = Store::new();
@@ -51,5 +62,14 @@ async fn main() {
         .and(store_filter.clone())
         .and_then(add_list_item);
 
-    warp::serve(add_items).run(([127, 0, 0, 1], 3030)).await;
+    let get_items = warp::post()
+        .and(warp::path("v1"))
+        .and(warp::path("groceries"))
+        .and(warp::path::end())
+        .and(store_filter.clone())
+        .and_then(get_list);
+
+    let routes = add_items.or(get_items);
+
+    warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 }
